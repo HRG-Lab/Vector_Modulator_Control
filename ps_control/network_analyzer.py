@@ -4,7 +4,7 @@ class network_analyzer(SCPI):
 
     def __init__(self,address):
         super().__init__(address)
-
+        print(self.identify())
 
     def clear_calcs(self):
         self.send('CALC:PAR:DEL:ALL')

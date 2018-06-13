@@ -1,9 +1,4 @@
 import socket
-import warnings
-# import numpy as np
-from time import sleep
-from time import time
-
 
 # These commands have only been checked with Rohde Schwarz Equipment
 class SCPI:
@@ -21,7 +16,6 @@ class SCPI:
     def reset(self):
         # Set all instrument settingsto default
         self.send('*RST')
-
 
         # This command for specific instruments (R&S vsg)
 
@@ -45,7 +39,6 @@ class SCPI:
         received_string = self.sock.recv(max_bits).decode('utf-8')
         received_string = received_string.rstrip('\n')
         values = received_string.split(',')
-
         return values
 
     # OPC() confirms that a command is completed
