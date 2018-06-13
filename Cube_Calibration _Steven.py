@@ -15,21 +15,37 @@ pi = np.pi
 def initialize():
     pna.send('CALC:PAR:DEL:ALL\n')
     sleep(1)
+
+    # ???
     pna.send('CALC:PAR \'CH1_S12_1\',S12\n')
+
+
+    # Set trace to S12? ...configure window
     pna.send('DISP:WIND1:TRAC1:FEED \'CH1_S12_1\'\n')
     pna.send('DISP:WIND1:TRAC1:Y:RPOS MAX\n')
     pna.send('DISP:WIND1:TRAC1:Y:RLEV 0\n')
     pna.send('DISP:WIND1:TRAC1:Y:PDIV 10\n')
+
+
     pna.send('CALC:PAR:SEL \'CH1_S12_1\'\n')
     pna.send('CALC:FORM MLOG\n')
+
+    # Marker ON ()
     pna.send('CALC:MARK ON\n')
     pna.send('CALC:MARK:X 2400 MHz\n')
+
+    ### >>>
     pna.send('CALC:PAR \'CH1_S12_2\',S12\n')
     pna.send('DISP:WIND2:TRAC1:FEED \'CH1_S12_2\'\n')
+
     pna.send('CALC:PAR:SEL \'CH1_S12_2\'\n')
     pna.send('CALC:FORM PHAS\n')
+
+    # Marker ON
     pna.send('CALC:MARK2 ON\n')
     pna.send('CALC:MARK2:X 2400 MHz\n')
+
+    # Averaging on
     pna.send('SENS:AVER ON\n')
     pna.send('SENS:AVER:MODE SWEEP\n')
     pna.send('SENS:AVER:COUN 2\n')
