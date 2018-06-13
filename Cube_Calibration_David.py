@@ -1,6 +1,7 @@
 import socket
 import serial
 import numpy as np
+from numpy import pi
 import matplotlib.pyplot as plt
 from time import sleep
 from time import time
@@ -8,19 +9,29 @@ from time import time
 startTime = time()
 
 deviceNumber = 8
-server_address = ('165.91.209.114',5025)
-serial_port = '/dev/ttyACM0' #'COM44'
-pi = np.pi
 
+# Server_address contains teh IP address of the VNA and the port for recieving scpi commands (Standard SCPI port is 5025)
+server_address = ('165.91.209.114',5025)
+
+# The serial port locates the arduino connected to this machine
+serial_port = '/dev/ttyACM0' #'COM44'
+
+# Initialize sends commands to the VNA to prepare
 def initialize():
+
+    # CALCulate:PARameter:DELete:ALL
+    # Deletes all calculations/traces from main window
     pna.send('CALC:PAR:DEL:ALL\n')
     sleep(1)
+
+    #Add trace for S12
     pna.send('CALC:PAR \'CH1_S12_1\',S12\n')
     pna.send('DISP:WIND1:TRAC1:FEED \'CH1_S12_1\'\n')
     pna.send('DISP:WIND1:TRAC1:Y:RPOS MAX\n')
     pna.send('DISP:WIND1:TRAC1:Y:RLEV 0\n')
     pna.send('DISP:WIND1:TRAC1:Y:PDIV 10\n')
     pna.send('CALC:PAR:SEL \'CH1_S12_1\'\n')
+
     pna.send('CALC:FORM MLOG\n')
     pna.send('CALC:MARK ON\n')
     pna.send('CALC:MARK:X 2460 MHz\n')
@@ -30,6 +41,8 @@ def initialize():
     pna.send('CALC:FORM PHAS\n')
     pna.send('CALC:MARK2 ON\n')
     pna.send('CALC:MARK2:X 2460 MHz\n')
+
+    # Turn on averaging
     pna.send('SENS:AVER ON\n')
     pna.send('SENS:AVER:MODE SWEEP\n')
     pna.send('SENS:AVER:COUN 2\n')
