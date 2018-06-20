@@ -8,7 +8,7 @@ from time import time
 startTime = time()
 
 deviceNumber = 13
-server_address = ('165.91.209.114',5025)
+server_address = ('10.0.0.3',5025)
 serial_port = '/dev/ttyACM0'
 pi = np.pi
 
