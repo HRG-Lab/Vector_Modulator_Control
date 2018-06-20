@@ -1,6 +1,7 @@
 import ps_control.network_analyzer as network_analyzer
 import serial
 import numpy as np
+import pandas as pd
 from time import sleep
 
 
@@ -57,12 +58,40 @@ for i in range(5000):
 
 print(Voltage_List)
 
-for Voltage in Voltage_List:
-    ser_connection.write(str(AntennaNum).encode())
-    ser_connection.write(str(Type).encode())
-    ser_connection.write(str(Voltage).encode())
-    # Set I voltage; 2 Seconds should be safe
-    sleep(2)
-    # Read marker phase value
+array_list = ['tx','rx']
+antenna_list = [1,2,3]
 
-    print(Voltage," Volts ", pna.readMarker(phase_name,phase_trace)," Deg")
+
+
+phase_dict = {'Voltage':Voltage_List}
+for array in array_list:
+    for antenna in antenna_list:
+        # Initialize a new measurements list for each antenna
+        measurements = []
+        for Voltage in Voltage_List:
+            input("Switch the feed to {0}_{1}, and press enter to calibrate.".format(array,antenna))
+
+
+            # Write the voltages to the Arduino
+            ser_connection.write(str(AntennaNum).encode())
+            ser_connection.write(str(Type).encode())
+            ser_connection.write(str(Voltage).encode())
+
+            # Set I voltage; 2 Seconds should be safe
+            sleep(2)
+
+            # Read marker phase value from network analyzer
+            phase = pna.readMarker(phase_name,phase_trace)
+
+            # Append the latest phase to the measurements list
+            measurements.append(phase)
+
+            print(Voltage," Volts ", phase," Deg")
+
+        # Add entry in dictionary mapping label to measurements list
+        label = "{0}_{1}".format(array, antenna)
+        phase_dict[label] = measurements
+
+df = pd.DataFrame.from_dict(phase_dict)
+
+df.to_csv('Phase_Cal.csv')
