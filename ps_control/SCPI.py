@@ -2,7 +2,7 @@ import socket
 
 # These commands have only been checked with Rohde Schwarz Equipment
 class SCPI:
-    def __init__(self, address):
+    def __init__(self, address,reset):
         print("Connecting to ", address[0])
         self.ADDRESS = address
         # Initialize socket object
@@ -10,7 +10,8 @@ class SCPI:
         self.sock.connect(address)
         self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
-        self.reset()
+        if reset:
+            self.reset()
 
     # The Reset function ensures the SignalGenerator Always starts in a defined state
     def reset(self):
