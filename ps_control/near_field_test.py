@@ -3,10 +3,8 @@ from itertools import product
 import numpy as np
 
 
-ps_bits = 3
+ps_bits = 2
 phase_tolerance = 5
-
-
 
 ### Generates the phase dictionary for a single antenna
 def generate_phase_dict(phase_shifter_bits):
@@ -21,8 +19,6 @@ def generate_phase_dict(phase_shifter_bits):
         phase += del_phase
         print(phase*180/np.pi)
     phase_map = dict(states_list)
-
-
     print(phase_map)
     return phase_map
 
@@ -35,22 +31,31 @@ def expand_phase_dictionary(single_antenna_phase_dict, num_antennas):
     new_key_combinations = sorted(product(keys, repeat=num_antennas))
 
     print("\nAdding all ", len(new_key_combinations), " New codewords to List\n")
-    # bar = progressbar.ProgressBar(maxval=len(new_key_combinations), widgets=[progressbar.Bar('=', '[', ']'), ' ',
-    #                                                                          progressbar.Percentage()])
-    # bar.start()
     for key_combo in new_key_combinations:
-        # bar.update(new_key_combinations.index(key_combo))
         value_list = []
-        # print(key_combo)
         for key in key_combo:
             value_list.append(single_antenna_phase_dict[key])
         new_dict_list.append((''.join(key_combo), value_list))
-    # bar.finish()
     print("Creating Dict from new Codebook")
     return dict(new_dict_list)
 
 
+# Parameters are an antenna to phase dictionary and a list of voltage dicts
+# corresponding to each antenna in the array
+def generate_voltage_codebook(antenna_phase_dict,voltage_dict_list):
+    num_antennas = len(voltage_dict_list)
+    keys = sorted(antenna_phase_dict.keys())
+    new_key_combinations = sorted(product(keys,repeat=num_antennas))
 
+    new_codeword_dict = {}
+    for key_combo in new_key_combinations:
+        next_codeword = (' '.join(key) for key in key_combo)
+        print(next_codeword)
+        for i in range(num_antennas):
+            key = key_combo[i]
+    # for voltage_dict in voltage_dict_list:
+
+    return new_codeword_dict
 
 
 # Read in Cal file for every phase shifter
@@ -96,10 +101,8 @@ tx1_phases_df['tx_1'] -= zero
 tx2_phases_df['tx_2'] -= zero
 tx3_phases_df['tx_3'] -= zero
 
-# Use Generate Phase dict to map codewords to
-x = generate_phase_dict(ps_bits)
 
-# Looks up the voltage key corresponding to the closest phase to parametre
+# Function Looks up the voltage key corresponding to the closest phase to parametre
 def get_voltage_key(desired_phase,dataframe,phase_key):
     phase_series = dataframe[phase_key] # Get phases from dataframe
     diff_series = abs(phase_series - desired_phase) # Calculate the difference between phases and desired phase
@@ -117,12 +120,51 @@ def get_voltage_key(desired_phase,dataframe,phase_key):
 
 # Create Empty dicts for codeword/voltage maps
 rx1_voltage_map = {}
+rx2_voltage_map = {}
+rx3_voltage_map = {}
+tx1_voltage_map = {}
+tx2_voltage_map = {}
+tx3_voltage_map = {}
+
+# Use Generate Phase dict to map codewords to
+phase_dict = generate_phase_dict(ps_bits)
 
 # Iterate through codeword-phase dict
-for key, value in x.items():
+for key, value in phase_dict.items():
     degrees = value*180/np.pi
     # print('x,',degrees)
 
     (rx1_v,rx1_phase) = get_voltage_key(degrees,rx1_phases_df,'rx_1')
-    print(key,rx1_v,degrees,rx1_phase)
-    # print(rx1_phases_df)
+    (rx2_v,rx2_phase) = get_voltage_key(degrees,rx2_phases_df,'rx_2')
+    (rx3_v,rx3_phase) = get_voltage_key(degrees,rx3_phases_df,'rx_3')
+
+    (tx1_v,tx1_phase) = get_voltage_key(degrees,tx1_phases_df,'tx_1')
+    (tx2_v,tx2_phase) = get_voltage_key(degrees,tx2_phases_df,'tx_2')
+    (tx3_v,tx3_phase) = get_voltage_key(degrees,tx3_phases_df,'tx_3')
+
+    if not (rx1_v< 0):
+        rx1_voltage_map[key] = rx1_v
+    if not (rx2_v< 0):
+        rx2_voltage_map[key] = rx2_v
+    if not (rx3_v< 0):
+        rx3_voltage_map[key] = rx3_v
+
+    if not (tx1_v< 0):
+        tx1_voltage_map[key] = tx1_v
+    if not (tx2_v< 0):
+        tx2_voltage_map[key] = tx2_v
+    if not (tx3_v< 0):
+        tx3_voltage_map[key] = tx3_v
+
+
+
+print('rx1 voltages:',rx1_voltage_map)
+print('rx2 voltages:',rx2_voltage_map)
+print('rx3 voltages:',rx3_voltage_map,'\n')
+
+print('tx1 voltages:',tx1_voltage_map)
+print('tx2 voltages:',tx2_voltage_map)
+print('tx3 voltages:',tx3_voltage_map)
+
+
+generate_voltage_codebook(phase_dict,[rx1_voltage_map,rx2_voltage_map,rx3_voltage_map])
