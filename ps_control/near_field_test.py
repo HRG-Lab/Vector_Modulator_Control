@@ -2,6 +2,12 @@ import pandas as pd
 from itertools import product
 import numpy as np
 
+
+ps_bits = 3
+phase_tolerance = 5
+
+
+
 ### Generates the phase dictionary for a single antenna
 def generate_phase_dict(phase_shifter_bits):
     bin_format = '{0:0' + str(phase_shifter_bits) + 'b}'
@@ -90,12 +96,33 @@ tx1_phases_df['tx_1'] -= zero
 tx2_phases_df['tx_2'] -= zero
 tx3_phases_df['tx_3'] -= zero
 
+# Use Generate Phase dict to map codewords to
+x = generate_phase_dict(ps_bits)
 
-x = generate_phase_dict(2)
-print(x)
+# Looks up the voltage key corresponding to the closest phase to parametre
+def get_voltage_key(desired_phase,dataframe,phase_key):
+    phase_series = dataframe[phase_key] # Get phases from dataframe
+    diff_series = abs(phase_series - desired_phase) # Calculate the difference between phases and desired phase
+    min_diff = diff_series.min() # Get minimum difference
 
+    if min_diff > phase_tolerance:
+        # If difference is greater than 3 degrees return -1
+        # To signal voltage not found
+        return (-1,min_diff)
+    else:
+        # Get index of closest phase values
+        index = diff_series[diff_series==min_diff].index[0]
+        # Return voltage closest to desired phase value
+        return (dataframe['Voltage'].iloc[index], dataframe[phase_key].iloc[index])
 
+# Create Empty dicts for codeword/voltage maps
+rx1_voltage_map = {}
 
-generate_phase_dict(2)
+# Iterate through codeword-phase dict
+for key, value in x.items():
+    degrees = value*180/np.pi
+    # print('x,',degrees)
 
-
+    (rx1_v,rx1_phase) = get_voltage_key(degrees,rx1_phases_df,'rx_1')
+    print(key,rx1_v,degrees,rx1_phase)
+    # print(rx1_phases_df)
