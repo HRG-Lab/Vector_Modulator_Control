@@ -1,10 +1,36 @@
 import pandas as pd
 from itertools import product
 import numpy as np
+import serial
+import ps_control.network_analyzer as network_analyzer
 
 
-ps_bits = 2
+
+ps_bits = 1
 phase_tolerance = 5
+
+pna_address = ('10.0.0.3',5025)
+serial_port = '/dev/ttyACM0'
+baud_rate = 115200
+
+freq = 2400
+start = 2000
+stop = 3000
+freq_units = 'MHz'
+
+# Initialize Serial Connection to Arduino
+ser_connection = serial.Serial(serial_port,baud_rate)
+
+# Initialize Network Analyzer
+pna = network_analyzer.network_analyzer(pna_address,False) # Create pna object
+
+s_param = "S12"
+mag_name = "mag_trace"
+mag_trace = 2
+pna.clear_calcs()
+pna.set_freq(start,stop,freq_units)
+pna.init_s_measurement(1,mag_name,mag_trace,s_param,"MLOG",freq,freq_units)
+
 
 ### Generates the phase dictionary for a single antenna
 def generate_phase_dict(phase_shifter_bits):
@@ -49,10 +75,22 @@ def generate_voltage_codebook(antenna_phase_dict,voltage_dict_list):
 
     new_codeword_dict = {}
     for key_combo in new_key_combinations:
-        next_codeword = (' '.join(key) for key in key_combo)
-        print(next_codeword)
+
+        # Generate next full codeword
+        next_codeword = ''
+        for key in key_combo:
+            next_codeword += key
+
+        next_voltage_list = []
         for i in range(num_antennas):
             key = key_combo[i]
+            if key in voltage_dict_list[i]:
+                next_voltage_list.append(voltage_dict_list[i][key])
+            else:
+                break
+
+        if len(next_voltage_list) == num_antennas:
+            new_codeword_dict[next_codeword] = next_voltage_list
     # for voltage_dict in voltage_dict_list:
 
     return new_codeword_dict
@@ -167,4 +205,31 @@ print('tx2 voltages:',tx2_voltage_map)
 print('tx3 voltages:',tx3_voltage_map)
 
 
-generate_voltage_codebook(phase_dict,[rx1_voltage_map,rx2_voltage_map,rx3_voltage_map])
+rx_codebook = generate_voltage_codebook(phase_dict,[rx1_voltage_map,rx2_voltage_map,rx3_voltage_map])
+tx_codebook = generate_voltage_codebook(phase_dict,[tx1_voltage_map,tx2_voltage_map,tx3_voltage_map])
+
+
+
+
+for rx_codeword in rx_codebook.keys():
+    rx_voltages = rx_codebook[rx_codeword]
+
+    # Set voltages for rx codeword
+    rx_antenna_list = [1,5,9]
+    for i in range(3):
+        antenna_num = rx_antenna_list[i]
+        ser_connection.write(str(i+1).encode())
+        ser_connection.write('Q'.encode())
+        ser_connection.write(str(rx_voltages[i]).encode())
+
+    for tx_codeword in tx_codebook.keys():
+        tx_voltages = tx_codebook[tx_codeword]
+        tx_antenna_list = [4,8,12]
+        # Set voltages for tx codeword
+        for i in range(3):
+            antenna_num = tx_antenna_list[i]
+            ser_connection.write(str(antenna_num).encode())
+            ser_connection.write('I'.encode())
+            ser_connection.write(str(tx_voltages[i]).encode())
+
+        S21 = pna.readMarker(mag_name,mag_trace)
