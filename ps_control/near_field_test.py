@@ -3,6 +3,7 @@ from itertools import product
 import numpy as np
 import serial
 import ps_control.network_analyzer as network_analyzer
+from time import sleep
 
 
 
@@ -222,6 +223,11 @@ for rx_codeword in rx_codebook.keys():
         ser_connection.write('Q'.encode())
         ser_connection.write(str(rx_voltages[i]).encode())
 
+        # Reads most recent state from Arduino
+        raw = ser_connection.read_until('\n'.encode())  # .decode()
+        print(raw)
+        sleep(1) # Wait one second for phase to change
+
     for tx_codeword in tx_codebook.keys():
         tx_voltages = tx_codebook[tx_codeword]
         tx_antenna_list = [4,8,12]
@@ -232,4 +238,10 @@ for rx_codeword in rx_codebook.keys():
             ser_connection.write('I'.encode())
             ser_connection.write(str(tx_voltages[i]).encode())
 
+            # Reads most recent state from Arduino
+            raw = ser_connection.read_until('\n'.encode())  # .decode()
+            print(raw)
+            sleep(1)  # Wait one second for phase to change
+
+        sleep(1) # Wait one more second before measurement
         S21 = pna.readMarker(mag_name,mag_trace)

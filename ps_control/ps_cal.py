@@ -52,33 +52,49 @@ ser_connection = serial.Serial(serial_port,baud_rate)
 # After initialization, loop through different voltages to read phases
 
 Voltage_List = []
-for i in range(5000):
+for i in range(1,501,1):
     # Dividing by 10 makes the floating point magic work out
-    Voltage_List.append(i/1000)
+    Voltage_List.append(i/100)
 
 print(Voltage_List)
 
-array_list = ['tx','rx']
+array_list = ['rx']
 antenna_list = [1,2,3]
 
+i = 0
+# AntennaNum_List = [4,8,12] # TX
+AntennaNum_List = [1,5,9] # RX
+
+# Type_List = ['I','I','I']
+Type_List = ['Q','Q','Q'] # RX
 
 
-phase_dict = {'Voltage':Voltage_List}
+
+
+
 for array in array_list:
     for antenna in antenna_list:
         # Initialize a new measurements list for each antenna
         measurements = []
+        input("\nSwitch the feed to {0}_{1}, and press enter to calibrate.".format(array, antenna))
+
+        AntennaNum = AntennaNum_List[i]
+        Type = Type_List[i]
+
+        print('To Arduino: ',AntennaNum,Type)
+
+        phase_dict = {'Voltage': Voltage_List}
         for Voltage in Voltage_List:
-            input("Switch the feed to {0}_{1}, and press enter to calibrate.".format(array,antenna))
-
-
             # Write the voltages to the Arduino
             ser_connection.write(str(AntennaNum).encode())
             ser_connection.write(str(Type).encode())
             ser_connection.write(str(Voltage).encode())
 
+            raw = ser_connection.read_until('\n'.encode())#.decode()
+            print(raw)
+
             # Set I voltage; 2 Seconds should be safe
-            sleep(2)
+            sleep(1)
 
             # Read marker phase value from network analyzer
             phase = pna.readMarker(phase_name,phase_trace)
@@ -91,7 +107,9 @@ for array in array_list:
         # Add entry in dictionary mapping label to measurements list
         label = "{0}_{1}".format(array, antenna)
         phase_dict[label] = measurements
+        i += 1
+        print(phase_dict)
 
-df = pd.DataFrame.from_dict(phase_dict)
+        df = pd.DataFrame.from_dict(phase_dict)
 
-df.to_csv('Phase_Cal.csv')
+        df.to_csv('Phase_Cal_{0}.csv'.format(label))
